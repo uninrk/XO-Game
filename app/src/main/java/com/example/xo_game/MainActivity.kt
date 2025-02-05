@@ -68,9 +68,44 @@ class MainActivity : ComponentActivity() {
 fun XOGame() {
     val rows = 4
     val columns = 4
-    var board by remember { mutableStateOf(List(rows * columns) {""}) }
+    var board by remember { mutableStateOf(List(rows) { MutableList(columns) {""} }) }
     var currPlayer by remember { mutableStateOf("O") }
-    val winner by remember { mutableStateOf<String?>(null) }
+    var winner by remember { mutableStateOf<String?>(null) }
+
+    fun checkWinner(currPlayer: String): Boolean {
+        for (row in board) {
+            if(row.all { it == currPlayer}){
+                return true
+            }
+        }
+        for (column in 0 until columns) {
+            if(board.all {it[column] == currPlayer}){
+                return true
+            }
+        }
+        if((0 until rows).all { i -> board[i][i] == currPlayer }){
+            return true
+        }
+        if((0 until  rows).all { i -> board[i][columns-i-1] == currPlayer}){
+            return true
+        }
+        return false
+    }
+
+    fun move(rowIndex: Int, columnIndex: Int) {
+        if(board[rowIndex][columnIndex].isEmpty()){
+            board = board.toMutableList().apply {
+                this[rowIndex] = this[rowIndex].toMutableList().apply {
+                    this[columnIndex] = currPlayer
+                }
+            }
+        }
+        if(checkWinner(currPlayer)){
+            winner = currPlayer
+        } else {
+            currPlayer = if (currPlayer == "O") "X" else "O"
+        }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -84,20 +119,19 @@ fun XOGame() {
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
             ) {
                 repeat(columns) { columnIndex ->
-                    val index = (rowIndex * columns) + columnIndex
                     XObtn(
                         gridSize = rows,
-                        symbol = board[index],
-                        enable = board[index].isEmpty() && winner.isNullOrEmpty(),
+                        symbol = board[rowIndex][columnIndex],
+                        enable = board[rowIndex][columnIndex].isEmpty() && winner.isNullOrEmpty(),
                         onClick = {
-                            if(board[index].isEmpty()){
-                                board = board.toMutableList().also { it[index] = currPlayer }
-                                currPlayer = if (currPlayer == "O") "X" else "O"
-                            }
+                            move(rowIndex, columnIndex)
                         }
                     )
                 }
             }
+        }
+        if(winner != null){
+            Text(text = "$winner Won", fontSize = 64.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
